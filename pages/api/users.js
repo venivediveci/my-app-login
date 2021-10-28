@@ -1,13 +1,11 @@
-const assert = require('assert')
-const bcrypt = require('bcrypt')
-const uuidv4 = require('uuid').v4
-const jwt = require('jsonwebtoken')
+import bcrypt from 'bcrypt'
+import { v4 as uuidv4 } from 'uuid'
+import jwt from 'jsonwebtoken'
 
-console.log(process.env)
+import dbPromise from '../../lib/mongodb'
+import { HttpError } from '../../errors'
 
 const saltRounds = 10
-
-const client = new MongoClient(url)
 
 function findUser(db, email, callback) {
   const collection = db.collection('user')
@@ -30,19 +28,37 @@ function createUser(db, email, password, callback) {
 /**
  * POST: create new user
  */
-const handler = (req, res) => {
+const handler = async (req, res) => {
   const { method } = req
 
-  switch (method) {
-    case 'POST':
-      // check the req param if it is ok
-      const { email, passward } = req.body
-      // create the user
-      // send the response
-      break
-    default:
-      res.setHeader('Allow', ['POST'])
-      res.status(405).end(`Method ${method} Not Allowed`)
+  try {
+    switch (method) {
+      case 'POST':
+        // check the req param if it is ok
+        const { email, password } = req.body
+        if (!email || !password) {
+          throw new HttpError(403, 'Invalid email or password')
+        }
+        // create the user
+        const client = await dbPromise
+        const db = client.db()
+        const collection = db.collection('user')
+        const hash = await bcrypt.hash(password, saltRounds)
+        const a = await collection.insertOne({
+          userId: uuidv4(),
+          email,
+          password: hash,
+        })
+        console.log(a)
+        // send the response
+        res.break
+      default:
+        res.setHeader('Allow', ['POST'])
+        res.status(405).end(`Method ${method} Not Allowed`)
+    }
+  } catch (error) {
+    const { statusCode = 500, message } = error
+    res.status(statusCode).end(message)
   }
 }
 
