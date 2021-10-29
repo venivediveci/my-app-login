@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken')
-const jwtSecret = 'SUPERSECRETE20220'
+
+const jwtSecret = process.env.SECRET
 
 const handler = (req, res) => {
   if (req.method === 'GET') {

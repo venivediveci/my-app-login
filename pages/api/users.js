@@ -6,24 +6,7 @@ import dbPromise from '../../lib/mongodb'
 import { HttpError } from '../../errors'
 
 const saltRounds = 10
-
-function findUser(db, email, callback) {
-  const collection = db.collection('user')
-  collection.findOne({ email }, callback)
-}
-
-function createUser(db, email, password, callback) {
-  const collection = db.collection('user')
-  bcrypt.hash(password, saltRounds, function (err, hash) {
-    collection.insertOne(
-      { userId: uuidv4(), email, password: hash },
-      function (err, userCreated) {
-        assert.equal(err, null)
-        callback(userCreated)
-      }
-    )
-  })
-}
+const jwtSecret = process.env.SECRET
 
 /**
  * POST: create new user
@@ -39,19 +22,44 @@ const handler = async (req, res) => {
         if (!email || !password) {
           throw new HttpError(403, 'Invalid email or password')
         }
-        // create the user
+        // db
         const client = await dbPromise
         const db = client.db()
         const collection = db.collection('user')
+        // check if the email already exists
+        const found = await collection.findOne({ email })
+        if (found) {
+          // console.log('found user: ', found)
+          // found user:  {
+          //   _id: new ObjectId("617674b1bfe75a7883455bea"),
+          //   userId: '08bdb5ce-02a3-4403-9674-850be633b97c',
+          //   email: '1@1',
+          //   password: '$2b$10$tKHD83k8P8zlej6eX7qSrubEo9mQSOkm.1kyz4qCTHlUGvK.H6fQq'
+          // }
+          throw new HttpError(403, 'Email already exists')
+        }
+        // create the user
         const hash = await bcrypt.hash(password, saltRounds)
-        const a = await collection.insertOne({
-          userId: uuidv4(),
+        const userId = uuidv4()
+        // export declare interface InsertOneResult<TSchema = Document> {
+        //     /** Indicates whether this write result was acknowledged. If not, then all other members of this result will be undefined */
+        //     acknowledged: boolean;
+        //     /** The identifier that was inserted. If the server generated the identifier, this value will be null as the driver does not have access to that data */
+        //     insertedId: InferIdType<TSchema>;
+        // }
+        const createRes = await collection.insertOne({
+          userId,
           email,
           password: hash,
         })
-        console.log(a)
+        if (!createRes.acknowledged) {
+          throw new HttpError(500, 'create user failed')
+        }
         // send the response
-        res.break
+        const token = jwt.sign({ userId, email }, jwtSecret, {
+          expiresIn: '3m',
+        })
+        res.status(200).json({ token })
       default:
         res.setHeader('Allow', ['POST'])
         res.status(405).end(`Method ${method} Not Allowed`)
@@ -63,50 +71,3 @@ const handler = async (req, res) => {
 }
 
 export default handler
-
-// if (req.method === 'POST') {
-//   try {
-//     assert.notEqual(null, req.body.email, 'Email required')
-//     assert.notEqual(null, req.body.password, 'Password required')
-//   } catch (bodyError) {
-//     res.status(403).json({ error: true, message: bodyError.message })
-//   }
-
-//   client.connect(function (err) {
-//     assert.equal(null, err)
-//     console.log('Connected to MongoDB server =>')
-//     const db = client.db(dbName)
-//     const email = req.body.email
-//     const password = req.body.password
-
-//     findUser(db, email, function (err, user) {
-//       if (err) {
-//         res.status(500).json({ error: true, message: 'Error finding User' })
-//         return
-//       }
-
-//       if (!user) {
-//         createUser(db, email, password, function (creationResult) {
-//           console.log(creationResult)
-//           if (creationResult.ops?.length === 1) {
-//             const user = creationResult.ops[0]
-//             const token = jwt.sign(
-//               { userId: user.userId, email: user.email },
-//               jwtSecret,
-//               {
-//                 expiresIn: '1m',
-//               }
-//             )
-//             res.status(200).json({ token })
-//             return
-//           }
-//         })
-//       } else {
-//         res.status(403).json({ error: true, message: 'Email exists' })
-//         return
-//       }
-//     })
-//   })
-// } else {
-//   res.status(200).json({ users: ['John Doe'] })
-// }
