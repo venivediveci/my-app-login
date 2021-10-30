@@ -1,12 +1,11 @@
 import bcrypt from 'bcrypt'
 import { v4 as uuidv4 } from 'uuid'
-import jwt from 'jsonwebtoken'
+import { sign } from '../../lib/jwt'
 
 import dbPromise from '../../lib/mongodb'
 import { HttpError } from '../../errors'
 
 const saltRounds = 10
-const jwtSecret = process.env.SECRET
 
 /**
  * POST: create new user
@@ -56,9 +55,7 @@ const handler = async (req, res) => {
           throw new HttpError(500, 'create user failed')
         }
         // send the response
-        const token = jwt.sign({ userId, email }, jwtSecret, {
-          expiresIn: '3m',
-        })
+        const token = await sign({ userId, email })
         res.status(200).json({ token })
       default:
         res.setHeader('Allow', ['POST'])

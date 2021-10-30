@@ -1,9 +1,6 @@
 const clientPromise = require('../../lib/mongodb')
+import { sign } from '../../lib/jwt'
 const assert = require('assert')
-const bcrypt = require('bcrypt')
-const jwt = require('jsonwebtoken')
-
-const jwtSecret = process.env.SECRET
 
 function findUser(email, callback) {
   const collection = db.collection('user')
@@ -37,24 +34,24 @@ const handler = async (req, res) => {
       if (!user) {
         res.status(404).json({ error: true, message: 'User not found' })
       } else {
-        authUser(db, email, password, user.password, function (err, match) {
-          if (err) {
-            res.status(500).json({ error: true, message: 'Auth Failed' })
+        authUser(
+          db,
+          email,
+          password,
+          user.password,
+          async function (err, match) {
+            if (err) {
+              res.status(500).json({ error: true, message: 'Auth Failed' })
+            }
+            if (match) {
+              const token = await sign({ userId, email })
+              res.status(200).json({ token })
+              return
+            } else {
+              res.status(401).json({ error: true, message: 'Auth Failed' })
+            }
           }
-          if (match) {
-            const token = jwt.sign(
-              { userId: user.userId, email: user.email },
-              jwtSecret,
-              {
-                expiresIn: '1m',
-              }
-            )
-            res.status(200).json({ token })
-            return
-          } else {
-            res.status(401).json({ error: true, message: 'Auth Failed' })
-          }
-        })
+        )
       }
     })
   } else {

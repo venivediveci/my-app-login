@@ -1,8 +1,6 @@
-const jwt = require('jsonwebtoken')
+import { verify } from '../../lib/jwt'
 
-const jwtSecret = process.env.SECRET
-
-const handler = (req, res) => {
+const handler = async (req, res) => {
   if (req.method === 'GET') {
     if (!('token' in req.cookies)) {
       res.status(401).json({ message: 'Unable to auth' })
@@ -12,7 +10,7 @@ const handler = (req, res) => {
     const token = req.cookies.token
     if (token) {
       try {
-        decoded = jwt.verify(token, jwtSecret)
+        decoded = await verify(token)
       } catch (e) {
         console.error(e)
       }
