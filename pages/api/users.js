@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt'
 import { v4 as uuidv4 } from 'uuid'
-import { sign } from '../../lib/jwt'
 
+import { sign } from '../../lib/jwt'
 import dbPromise from '../../lib/mongodb'
 import { HttpError } from '../../errors'
 

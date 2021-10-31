@@ -1,62 +1,53 @@
-const clientPromise = require('../../lib/mongodb')
+import bcrypt from 'bcrypt'
+
 import { sign } from '../../lib/jwt'
-const assert = require('assert')
+import dbPromise from '../../lib/mongodb'
+import { HttpError } from '../../errors'
 
-function findUser(email, callback) {
-  const collection = db.collection('user')
-  collection.findOne({ email }, callback)
-}
-
-function authUser(password, hash, callback) {
-  bcrypt.compare(password, hash, callback)
-}
-
+/**
+ * user login logic
+ */
 const handler = async (req, res) => {
-  if (req.method === 'POST') {
-    try {
-      assert.notEqual(null, req.body.email, 'Email required')
-      assert.notEqual(null, req.body.password, 'Password required')
-    } catch (bodyError) {
-      res.status(403).send(bodyError.message)
+  const { method } = req
+  try {
+    switch (method) {
+      case 'POST':
+        const { email, password } = req.body
+        // check the email and password if they are ok
+        if (!email || !email) {
+          throw new HttpError(403, 'Invalid email or password')
+        }
+        // db
+        const client = await dbPromise
+        const db = client.db()
+        const collection = db.collection('user')
+        // check if user exists
+        const user = await collection.findOne({ email })
+        if (!user) {
+          // {
+          //   _id: new ObjectId("617674b1bfe75a7883455bea"),
+          //   userId: '08bdb5ce-02a3-4403-9674-850be633b97c',
+          //   email: '1@1',
+          //   password: '$2b$10$tKHD83k8P8zlej6eX7qSrubEo9mQSOkm.1kyz4qCTHlUGvK.H6fQq'
+          // }
+          throw new HttpError(403, 'Email or password invalid')
+        }
+        // check password
+        const isValid = await bcrypt.compare(password, user.password)
+        if (!isValid) {
+          throw new HttpError(403, 'Email or password invalid')
+        }
+        // generate a jwt and send it to the client
+        const token = await sign({ userId, email })
+        res.status(200).json({ token })
+        break
+      default:
+        res.setHeader('Allow', ['POST'])
+        res.status(405).end(`Method ${method} Not Allowed`)
     }
-
-    const client = await clientPromise
-    const db = client.db() // will be the default database passed in the MONGODB_URI
-
-    const email = req.body.email
-    const password = req.body.password
-
-    findUser(db, email, function (err, user) {
-      if (err) {
-        res.status(500).json({ error: true, message: 'Error finding User' })
-        return
-      }
-      if (!user) {
-        res.status(404).json({ error: true, message: 'User not found' })
-      } else {
-        authUser(
-          db,
-          email,
-          password,
-          user.password,
-          async function (err, match) {
-            if (err) {
-              res.status(500).json({ error: true, message: 'Auth Failed' })
-            }
-            if (match) {
-              const token = await sign({ userId, email })
-              res.status(200).json({ token })
-              return
-            } else {
-              res.status(401).json({ error: true, message: 'Auth Failed' })
-            }
-          }
-        )
-      }
-    })
-  } else {
-    res.statusCode = 401
-    res.end()
+  } catch (e) {
+    const { statusCode = 500, message } = error
+    res.status(statusCode).end(message)
   }
 }
 
