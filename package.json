@@ -23,7 +23,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.15.8",
-    "eslint": "8.1.0",
+    "eslint": "7",
     "eslint-config-next": "11.1.2"
   }
 }
