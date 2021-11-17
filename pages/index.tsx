@@ -1,10 +1,11 @@
+import React from 'react'
 import Head from 'next/head'
 import useSWR from 'swr'
 import cookie from 'js-cookie'
 import fetch from 'isomorphic-unfetch'
 import Link from 'next/link'
 
-export default function Home() {
+const Home: React.FC = () => {
   const { data, revalidate } = useSWR('/api/me', async function (args) {
     const res = await fetch(args)
     return res.json()
@@ -47,3 +48,5 @@ export default function Home() {
     </div>
   )
 }
+
+export default Home
