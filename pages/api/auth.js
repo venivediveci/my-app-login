@@ -38,14 +38,14 @@ const handler = async (req, res) => {
           throw new HttpError(403, 'Email or password invalid')
         }
         // generate a jwt and send it to the client
-        const token = await sign({ userId, email })
+        const token = await sign({ userId: user.userId, email })
         res.status(200).json({ token })
         break
       default:
         res.setHeader('Allow', ['POST'])
         res.status(405).end(`Method ${method} Not Allowed`)
     }
-  } catch (e) {
+  } catch (error) {
     const { statusCode = 500, message } = error
     res.status(statusCode).end(message)
   }

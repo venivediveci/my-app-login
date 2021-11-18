@@ -6,7 +6,7 @@ import fetch from 'isomorphic-unfetch'
 import Link from 'next/link'
 
 const Home: React.FC = () => {
-  const { data, revalidate } = useSWR('/api/me', async function (args) {
+  const { data, mutate } = useSWR('/api/me', async function (args) {
     const res = await fetch(args)
     return res.json()
   })
@@ -31,7 +31,7 @@ const Home: React.FC = () => {
           <button
             onClick={() => {
               cookie.remove('token')
-              revalidate()
+              mutate()
             }}
           >
             Logout
