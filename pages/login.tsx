@@ -1,8 +1,8 @@
 import { useRouter } from 'next/router'
-import { useReducer, useState } from 'react'
+import { FC, useState } from 'react'
 import Cookies from 'js-cookie'
 
-const Login = () => {
+const Login: FC = () => {
   const [loginError, setLoginError] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -48,7 +48,7 @@ const Login = () => {
         onChange={(e) => setPassword(e.target.value)}
       />
       <input type="submit" value="Submit" />
-      {loginError && <p style={{ coloe: red }}>{loginError}</p>}
+      {loginError && <p style={{ color: 'red' }}>{loginError}</p>}
     </form>
   )
 }

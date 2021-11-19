@@ -24,12 +24,6 @@ const handler = async (req, res) => {
         // check if user exists
         const user = await collection.findOne({ email })
         if (!user) {
-          // {
-          //   _id: new ObjectId("617674b1bfe75a7883455bea"),
-          //   userId: '08bdb5ce-02a3-4403-9674-850be633b97c',
-          //   email: '1@1',
-          //   password: '$2b$10$tKHD83k8P8zlej6eX7qSrubEo9mQSOkm.1kyz4qCTHlUGvK.H6fQq'
-          // }
           throw new HttpError(403, 'Email or password invalid')
         }
         // check password
