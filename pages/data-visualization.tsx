@@ -20,6 +20,7 @@ const DataVisualization: React.FC = () => {
         change title
       </button>
       <Link href="/login">Login</Link>
+      <p>Here are some description</p>
     </div>
   )
 }
