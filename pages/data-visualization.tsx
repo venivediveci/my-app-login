@@ -4,6 +4,7 @@ import { useState } from 'react'
 
 const DataVisualization: React.FC = () => {
   const [title, setTitle] = useState('Data Visualization')
+
   return (
     <div>
       <Head>
