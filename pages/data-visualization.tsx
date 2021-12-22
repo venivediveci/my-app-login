@@ -1,10 +1,12 @@
+import { useEffect, useState } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
-import { useState } from 'react'
 
 const DataVisualization: React.FC = () => {
   const [title, setTitle] = useState('Data Visualization')
-
+  useEffect(() => {
+    console.log(title)
+  }, [])
   return (
     <div>
       <Head>
